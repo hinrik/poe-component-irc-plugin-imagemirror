@@ -89,6 +89,14 @@ sub S_urifind_uri {
     my $where = ${ $_[1] };
     my $uri   = ${ $_[2] };
 
+    if (ref $self->{Channels} eq 'ARRAY') {
+        my $ok;
+        for my $chan (@{ $self->{Channels} }) {
+            $ok = 1 if $chan eq $where;
+        }
+        return PCI_EAT_NONE if !$ok;
+    }
+
     my $matched;
     for my $match (@{ $self->{URI_match} }) {
         $matched = 1 if $uri =~ $match;
@@ -213,6 +221,9 @@ short description of the image along with the new URL.
 =head2 C<new>
 
 Takes the following optional arguments:
+
+B<'Channels'>, an array reference of channels names. If you don't supply
+this, images will be mirrored in all channels.
 
 B<'URI_match'>, an array reference of regex objects. Any url found must match
 at least one of these regexes if it is to be uploaded. If you don't supply

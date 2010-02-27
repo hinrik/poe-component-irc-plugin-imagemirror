@@ -22,6 +22,9 @@ METHODS
   "new"
     Takes the following optional arguments:
 
+    'Channels', an array reference of channels names. If you don't supply
+    this, images will be mirrored in all channels.
+
     'URI_match', an array reference of regex objects. Any url found must
     match at least one of these regexes if it is to be uploaded. If you
     don't supply this parameter, a default regex of
