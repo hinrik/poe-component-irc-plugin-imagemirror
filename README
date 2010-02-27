@@ -49,3 +49,9 @@ AUTHOR
     Imageshack-related code provided by Ævar Arnfjörð Bjarmason
     <avar@cpan.org>.
 
+LICENSE AND COPYRIGHT
+    Copyright 2010 Hinrik Örn Sigurðsson
+
+    This program is free software, you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
