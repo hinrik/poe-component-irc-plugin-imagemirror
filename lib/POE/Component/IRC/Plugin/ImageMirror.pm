@@ -11,7 +11,7 @@ use POE::Component::IRC::Plugin qw(PCI_EAT_NONE);
 use POE::Component::IRC::Plugin::URI::Find;
 use POE::Wheel::Run;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my $uri_title_code = <<'END';
 use strict;
