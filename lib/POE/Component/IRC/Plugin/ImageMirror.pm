@@ -174,7 +174,7 @@ sub _mirror_uri {
     my $content = $res->content;
     if (my ($uri) = $content =~ m{<a.*? href="(.*?)"[^>]+>Direct}) {
         $uri =~ s/' .*$//;
-        $self->{irc}->yield(privmsg => $where, "$title - $uri");
+        $self->{irc}->yield($self->{Method}, $where, "$title - $uri");
     }
     
     $kernel->refcount_decrement($sender, __PACKAGE__);
