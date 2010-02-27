@@ -91,7 +91,7 @@ sub S_urifind_uri {
 
     my $matched;
     for my $match (@{ $self->{URI_match} }) {
-        $matched = 1;
+        $matched = 1 if $uri =~ $match;
         last if $matched;
     }
     return PCI_EAT_NONE if !$matched;
