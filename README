@@ -21,6 +21,10 @@ DESCRIPTION
      <avar> http://images.4chan.org/b/src/1267339589262.gif
      -MyBot:#avar- gif (318 x 241) - http://imgur.com/RWcSE.gif - http://img535.imageshack.us/img535/9685/1267339589262.gif
 
+    This plugin makes use of POE::Component::IRC::Plugin::URI::Find. An
+    instance will be added to the plugin pipeline if it is not already
+    present.
+
 METHODS
   "new"
     Takes the following optional arguments:
@@ -45,6 +49,10 @@ METHODS
 
     'Method', how you want messages to be delivered. Valid options are
     'notice' (the default) and 'privmsg'.
+
+    'Eat', when enabled, will prevent further processing of
+    "irc_urifind_uri" events by other plugins for URIs which this plugin
+    mirrors. False by default.
 
     Returns a plugin object suitable for feeding to POE::Component::IRC's
     "plugin_add" method.

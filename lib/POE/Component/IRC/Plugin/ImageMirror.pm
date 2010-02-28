@@ -7,7 +7,7 @@ use HTTP::Headers;
 use List::MoreUtils qw(natatime);
 use LWP::UserAgent::POE;
 use POE;
-use POE::Component::IRC::Plugin qw(PCI_EAT_NONE);
+use POE::Component::IRC::Plugin qw(PCI_EAT_NONE PCI_EAT_PLUGIN);
 use POE::Component::IRC::Plugin::URI::Find;
 use POE::Wheel::Run;
 
@@ -106,7 +106,11 @@ sub S_urifind_uri {
     }
     return PCI_EAT_NONE if !$matched;
 
-    return PCI_EAT_NONE if defined $self->{req}{$uri};
+    if (defined $self->{req}{$uri}) {
+        return $self->{Eat}
+            ? PCI_EAT_PLUGIN
+            : PCI_EAT_NONE;
+    }
 
     if ($self->{URI_subst}) {
         my $iter = natatime 2, @{ $self->{URI_subst} };
@@ -117,7 +121,9 @@ sub S_urifind_uri {
 
     my $sender = POE::Kernel->get_active_session;
     POE::Kernel->post($self->{session_id}, _uri_title => $sender, $where, $uri);
-    return PCI_EAT_NONE;
+    return $self->{Eat}
+        ? PCI_EAT_PLUGIN
+        : PCI_EAT_NONE;
 }
 
 sub _uri_title {
@@ -284,6 +290,10 @@ short description of the image along with the new URLs.
  <avar> http://images.4chan.org/b/src/1267339589262.gif
  -MyBot:#avar- gif (318 x 241) - http://imgur.com/RWcSE.gif - http://img535.imageshack.us/img535/9685/1267339589262.gif
 
+This plugin makes use of
+L<POE::Component::IRC::Plugin::URI::Find|POE::Component::IRC::URI::Find>. An
+instance will be added to the plugin pipeline if it is not already present.
+
 =head1 METHODS
 
 =head2 C<new>
@@ -309,6 +319,9 @@ Example:
 
 B<'Method'>, how you want messages to be delivered. Valid options are
 'notice' (the default) and 'privmsg'.
+
+B<'Eat'>, when enabled, will prevent further processing of C<irc_urifind_uri>
+events by other plugins for URIs which this plugin mirrors. False by default.
 
 Returns a plugin object suitable for feeding to
 L<POE::Component::IRC|POE::Component::IRC>'s C<plugin_add> method.
