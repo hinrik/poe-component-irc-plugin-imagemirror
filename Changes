@@ -1,3 +1,6 @@
+0.04
+    - Mirror to imgur.com as well
+
 0.03 Sat Feb 27 06:39:24 GMT 2010
     - Add licensing info to Pod
     - Don't mirror unwanted URIs
