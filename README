@@ -50,8 +50,8 @@ METHODS
     'URI_title', whether or not to include a title produced by URI::Title.
     Defaults to true.
 
-    'Imgur_user', an Imgur username. If provided, the images will uploaded
-    to Imgur will be under this account rather than anonymously.
+    'Imgur_user', an Imgur username. If provided, the images uploaded to
+    Imgur will be under this account rather than anonymous.
 
     'Imgur_pass', an Imgur account password to go with 'ImgurUser'.
 

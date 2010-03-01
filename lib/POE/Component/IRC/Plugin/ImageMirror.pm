@@ -354,8 +354,8 @@ Example:
 B<'URI_title'>, whether or not to include a title produced by
 L<URI::Title|URI::Title>. Defaults to true.
 
-B<'Imgur_user'>, an Imgur username. If provided, the images will uploaded to
-Imgur will be under this account rather than anonymously.
+B<'Imgur_user'>, an Imgur username. If provided, the images uploaded to Imgur
+will be under this account rather than anonymous.
 
 B<'Imgur_pass'>, an Imgur account password to go with B<'ImgurUser'>.
 
