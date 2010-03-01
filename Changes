@@ -1,3 +1,6 @@
+0.05
+    - Allow uploading to a specific Imgur account
+
 0.04 Mon Mar  1 00:16:07 GMT 2010
     - Mirror to imgur.com as well
     - Add 'Eat' parameter

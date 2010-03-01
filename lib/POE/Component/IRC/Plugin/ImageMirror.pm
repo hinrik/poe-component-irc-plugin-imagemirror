@@ -208,6 +208,17 @@ sub _mirror_imgur {
         requests_redirectable => [qw(GET HEAD POST)],
     );
 
+    if (defined $self->{Imgur_user} && defined $self->{Imgur_pass}) {
+        $ua->post(
+            'http://imgur.com/signin',
+            {
+                username => $self->{Imgur_user},
+                password => $self->{Imgur_pass},
+                submit   => '',
+            },
+        );
+    }
+
     my $res = $ua->get("http://imgur.com/api/upload/?url=$uri");
 
     my $imgur;
@@ -342,6 +353,11 @@ Example:
 
 B<'URI_title'>, whether or not to include a title produced by
 L<URI::Title|URI::Title>. Defaults to true.
+
+B<'Imgur_user'>, an Imgur username. If provided, the images will uploaded to
+Imgur will be under this account rather than anonymously.
+
+B<'Imgur_pass'>, an Imgur account password to go with B<'ImgurUser'>.
 
 B<'Method'>, how you want messages to be delivered. Valid options are
 'notice' (the default) and 'privmsg'.
