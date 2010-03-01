@@ -185,7 +185,7 @@ sub _child_stdout {
     my ($kernel, $self, $title, $id) = @_[KERNEL, OBJECT, ARG0, ARG1];
 
     my $uri;
-    for my $key (%{ $self->{req} }) {
+    for my $key (keys %{ $self->{req} }) {
         if ($self->{req}{$key}{wheel}->ID eq $id) {
             $uri = $key;
             last;
@@ -193,7 +193,6 @@ sub _child_stdout {
     }
 
     $self->{req}{$uri}{title} = $title;
-    delete $self->{req}{$uri}{wheel};
 
     $kernel->yield(_mirror_imgur => $uri);
     $kernel->yield(_mirror_imgshack => $uri);
