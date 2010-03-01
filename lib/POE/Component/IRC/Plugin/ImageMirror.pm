@@ -30,6 +30,7 @@ sub new {
       'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9b3pre) Gecko/2008020108'
       if !defined $self->{useragent};
     $self->{URI_match} = [qr/(?i:jpe?g|gif|png)$/] if !$self->{URI_match};
+    $self->{URI_title} = 1 if !defined $self->{URI_title};
     $self->{Method} = 'notice' if !defined $self->{Method};
 
     return $self;
@@ -52,6 +53,7 @@ sub PCI_register {
                 _child_stdout
                 _child_stderr
                 _uri_title
+                _no_uri_title
                 _mirror_imgur
                 _mirror_imgshack
                 _post_uri
@@ -120,10 +122,30 @@ sub S_urifind_uri {
     }
 
     my $sender = POE::Kernel->get_active_session;
-    POE::Kernel->post($self->{session_id}, _uri_title => $sender, $where, $uri);
+    if ($self->{URI_title}) {
+        POE::Kernel->post($self->{session_id}, _uri_title => $sender, $where, $uri);
+    }
+    else {
+        POE::Kernel->post($self->{session_id}, _no_uri_title => $sender, $where, $uri);
+    }
+
     return $self->{Eat}
         ? PCI_EAT_PLUGIN
         : PCI_EAT_NONE;
+}
+
+sub _no_uri_title {
+    my ($kernel, $self, $sender, $where, $uri) = @_[KERNEL, OBJECT, ARG0..ARG2];
+
+    $self->{req}{$uri} = {
+        sender   => $sender,
+        where    => $where,
+        orig_uri => $uri,
+    };
+    $kernel->yield(_mirror_imgur => $uri);
+    $kernel->yield(_mirror_imgshack => $uri);
+    $kernel->refcount_increment($sender, __PACKAGE__);
+    return;
 }
 
 sub _uri_title {
@@ -250,10 +272,11 @@ sub _post_uri {
     my ($kernel, $self, $uri) = @_[KERNEL, OBJECT, ARG0];
 
     my $req = delete $self->{req}{$uri};
+    my $title = $self->{URI_title} ? "$req->{title} - " : '';
     $self->{irc}->yield(
         $self->{Method},
         $req->{where},
-        "$req->{title} - $req->{imgur_uri} / $req->{imgshack_uri}",
+        "$title$req->{imgur_uri} / $req->{imgshack_uri}",
     );
 
     $kernel->refcount_decrement($req->{sender}, __PACKAGE__);
@@ -316,6 +339,9 @@ Example:
  URI_subst => [
      qr{(?<=^)https(?=://(?:www\.)?7chan\.org)} => 'http',
  ]
+
+B<'URI_title'>, whether or not to include a title produced by
+L<URI::Title|URI::Title>. Defaults to true.
 
 B<'Method'>, how you want messages to be delivered. Valid options are
 'notice' (the default) and 'privmsg'.

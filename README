@@ -47,6 +47,9 @@ METHODS
          qr{(?<=^)https(?=://(?:www\.)?7chan\.org)} => 'http',
      ]
 
+    'URI_title', whether or not to include a title produced by URI::Title.
+    Defaults to true.
+
     'Method', how you want messages to be delivered. Valid options are
     'notice' (the default) and 'privmsg'.
 
