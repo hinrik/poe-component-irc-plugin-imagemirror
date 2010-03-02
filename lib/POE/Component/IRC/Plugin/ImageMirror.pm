@@ -10,16 +10,9 @@ use POE;
 use POE::Component::IRC::Plugin qw(PCI_EAT_NONE PCI_EAT_PLUGIN);
 use POE::Component::IRC::Plugin::URI::Find;
 use POE::Wheel::Run;
+use URI::Title qw(title);
 
 our $VERSION = '0.05';
-
-my $uri_title_code = <<'END';
-use strict;
-use warnings;
-use URI::Title qw(title);
-$| = 1;
-print title($ARGV[0]), "\n";
-END
 
 sub new {
     my ($package, %args) = @_;
@@ -153,9 +146,10 @@ sub _uri_title {
 
     my @inc = map { +'-I' => $_ } @INC;
     my $wheel = POE::Wheel::Run->new(
-        Program     => [$^X, @inc, '-e', $uri_title_code, $uri],
+        Program     => sub { title($uri) },
         StdoutEvent => '_child_stdout',
         StderrEvent => '_child_stderr',
+        ($^O eq 'MSWin32' ? (CloseOnCall => 0) : (CloseOnCall => 1)),
     );
 
     $self->{req}{$uri} = {
