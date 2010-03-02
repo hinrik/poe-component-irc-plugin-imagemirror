@@ -227,7 +227,7 @@ sub _mirror_imgur {
         }
     }
 
-    $self->{req}{$uri}{imgur_uri} = $imgur // '';
+    $self->{req}{$uri}{imgur_uri} = defined $imgur ? $imgur : '';
 
     # post the url if we've got both now
     if (defined $self->{req}{$uri}{imgshack_uri}) {
@@ -269,7 +269,7 @@ sub _mirror_imgshack {
         }
     }
 
-    $self->{req}{$uri}{imgshack_uri} = $imgshack // '';
+    $self->{req}{$uri}{imgshack_uri} = defined $imgshack ? $imgshack : '';
 
     # post the url if we've got both now
     if (defined $self->{req}{$uri}{imgur_uri}) {

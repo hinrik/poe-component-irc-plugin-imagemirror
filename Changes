@@ -1,5 +1,6 @@
 0.06
     - Fix a fatal error when mirroring more than one URI at a time
+    - Remove Perl 5.10-isms so it won't fail on <5.10 
 
 0.05 Mon Mar  1 02:48:21 GMT 2010
     - Allow uploading to a specific Imgur account
