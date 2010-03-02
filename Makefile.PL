@@ -2,6 +2,11 @@ use strict;
 use warnings;
 use inc::Module::Install;
 
+my $mi = '0.94';
+if ($inc::Module::Install::VERSION lt $mi) {
+    die "Your Module::Install is older than $mi, please upgrade it";
+}
+
 my $dist = 'POE-Component-IRC-Plugin-ImageMirror';
 name           ($dist);
 author         ('Hinrik Örn Sigurðsson <hinrik.sig@gmail.com>');
@@ -30,6 +35,5 @@ author_requires('Perl::Critic'        => '1.098');
 author_requires('Test::Perl::Critic'  => '0');
 author_requires('Test::Pod'           => '1.41');
 author_requires('Test::Pod::Coverage' => '1.08');
-author_tests   ('xt');
 
 WriteAll();
