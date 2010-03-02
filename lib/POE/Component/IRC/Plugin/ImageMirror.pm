@@ -194,7 +194,7 @@ sub _child_stdout {
 }
 
 sub _mirror_imgur {
-    my ($kernel, $self, $uri) = @_[KERNEL, OBJECT, ARG0];
+    my ($kernel, $self, $orig_uri) = @_[KERNEL, OBJECT, ARG0];
 
     my $ua = LWP::UserAgent::POE->new(
         cookie_jar            => HTTP::Cookies->new,
@@ -212,7 +212,7 @@ sub _mirror_imgur {
         );
     }
 
-    my $res = $ua->get("http://imgur.com/api/upload/?url=$uri");
+    my $res = $ua->get("http://imgur.com/api/upload/?url=$orig_uri");
 
     my $imgur;
     if ($res->is_success) {
@@ -221,17 +221,17 @@ sub _mirror_imgur {
         }
     }
 
-    $self->{req}{$uri}{imgur_uri} = defined $imgur ? $imgur : '';
+    $self->{req}{$orig_uri}{imgur_uri} = defined $imgur ? $imgur : '';
 
     # post the url if we've got both now
-    if (defined $self->{req}{$uri}{imgshack_uri}) {
-        $kernel->yield(_post_uri => $uri);
+    if (defined $self->{req}{$orig_uri}{imgshack_uri}) {
+        $kernel->yield(_post_uri => $orig_uri);
     }
     return;
 }
 
 sub _mirror_imgshack {
-    my ($kernel, $self, $uri) = @_[KERNEL, OBJECT, ARG0];
+    my ($kernel, $self, $orig_uri) = @_[KERNEL, OBJECT, ARG0];
 
     my $ua = LWP::UserAgent::POE->new(
         cookie_jar            => HTTP::Cookies->new,
@@ -247,7 +247,7 @@ sub _mirror_imgshack {
          Content_Type => 'multipart/form-data',
          Content      => [
             uploadtype    => 'on',
-            url           => $uri,
+            url           => $orig_uri,
             email         => '', 
             MAX_FILE_SIZE => 13145728,
             refer         => '', 
@@ -263,11 +263,11 @@ sub _mirror_imgshack {
         }
     }
 
-    $self->{req}{$uri}{imgshack_uri} = defined $imgshack ? $imgshack : '';
+    $self->{req}{$orig_uri}{imgshack_uri} = defined $imgshack ? $imgshack : '';
 
     # post the url if we've got both now
-    if (defined $self->{req}{$uri}{imgur_uri}) {
-        $kernel->yield(_post_uri => $uri);
+    if (defined $self->{req}{$orig_uri}{imgur_uri}) {
+        $kernel->yield(_post_uri => $orig_uri);
     }
     return;
 }
