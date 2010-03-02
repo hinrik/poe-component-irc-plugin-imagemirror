@@ -321,7 +321,7 @@ the channel log and uploads the images to Imageshack and Imgur, then prints a
 short description of the image along with the new URLs.
 
  <avar> http://images.4chan.org/b/src/1267339589262.gif
- -MyBot:#avar- gif (318 x 241) - http://imgur.com/RWcSE.gif - http://img535.imageshack.us/img535/9685/1267339589262.gif
+ -MyBot:#channel- gif (318 x 241) - http://imgur.com/RWcSE.gif - http://img535.imageshack.us/img535/9685/1267339589262.gif
 
 This plugin makes use of
 L<POE::Component::IRC::Plugin::URI::Find|POE::Component::IRC::URI::Find>. An

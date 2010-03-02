@@ -19,7 +19,7 @@ DESCRIPTION
     image along with the new URLs.
 
      <avar> http://images.4chan.org/b/src/1267339589262.gif
-     -MyBot:#avar- gif (318 x 241) - http://imgur.com/RWcSE.gif - http://img535.imageshack.us/img535/9685/1267339589262.gif
+     -MyBot:#channel- gif (318 x 241) - http://imgur.com/RWcSE.gif - http://img535.imageshack.us/img535/9685/1267339589262.gif
 
     This plugin makes use of POE::Component::IRC::Plugin::URI::Find. An
     instance will be added to the plugin pipeline if it is not already
