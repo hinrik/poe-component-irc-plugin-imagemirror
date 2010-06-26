@@ -1,3 +1,6 @@
+0.07
+    - Allow text arguments to URI_match and URI_subst
+
 0.06 Tue Mar  2 22:39:26 GMT 2010
     - Fix a fatal error when mirroring more than one URI at a time
     - Remove Perl 5.10-isms so it won't fail on <5.10 

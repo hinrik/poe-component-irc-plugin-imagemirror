@@ -22,11 +22,33 @@ sub new {
     $self->{useragent} =
       'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9b3pre) Gecko/2008020108'
       if !defined $self->{useragent};
+
+    $self->_text_to_regex();
     $self->{URI_match} = [qr/(?i:jpe?g|gif|png)$/] if !$self->{URI_match};
     $self->{URI_title} = 1 if !defined $self->{URI_title};
     $self->{Method} = 'notice' if !defined $self->{Method};
 
     return $self;
+}
+
+sub _text_to_regex {
+    my ($self) = @_;
+
+    no re 'eval';
+    if ($self->{URI_match}) {
+        for my $elem (@{ $self->{URI_match} }) {
+            $elem = qr/$elem/ if !ref $elem;
+        }
+    }
+
+    while (my ($key, $value) = each %{ $self->{URI_subst} }) {
+        if (!ref $key) {
+            delete $self->{URI_subst}{$key};
+            $self->{URI_subst}{qr/$key/} = $value;
+        }
+    }
+
+    return;
 }
 
 sub PCI_register {
