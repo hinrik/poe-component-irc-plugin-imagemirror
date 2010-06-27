@@ -20,7 +20,6 @@ resources      (Ratings => "http://cpanratings.perl.org/d/$dist");
 
 requires       ('HTTP::Cookies'       => '0');
 requires       ('HTTP::Headers'       => '0');
-requires       ('List::MoreUtils'     => '0');
 requires       ('LWP::UserAgent::POE' => '0');
 requires       ('POE'                 => '0');
 requires       ('POE::Wheel::Run'     => '0');

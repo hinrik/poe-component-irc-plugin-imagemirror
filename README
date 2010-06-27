@@ -37,8 +37,9 @@ METHODS
     don't supply this parameter, a default regex of
     "qr/(?i:jpe?g|gif|png)$/" is used.
 
-    'URI_subst', an array of regex/string pairs. These substitutions will be
-    done on the accepted URIs before they are processed further.
+    'URI_subst', an hash reference of regex/string pairs. These
+    substitutions will be done on the accepted URIs before they are
+    processed further.
 
     Example:
 

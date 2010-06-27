@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use HTTP::Cookies;
 use HTTP::Headers;
-use List::MoreUtils qw(natatime);
 use LWP::UserAgent::POE;
 use POE;
 use POE::Component::IRC::Plugin qw(PCI_EAT_NONE PCI_EAT_PLUGIN);
@@ -130,9 +129,8 @@ sub S_urifind_uri {
     }
 
     if ($self->{URI_subst}) {
-        my $iter = natatime 2, @{ $self->{URI_subst} };
-        while (my ($r, $s) = $iter->()) {
-            $uri =~ s/$r/$s/;
+        while (my ($regex, $subst) = each %{ $self->{URI_subst} }) {
+            $uri =~ s/$regex/$subst/;
         }
     }
 
@@ -356,8 +354,9 @@ B<'URI_match'>, an array reference of regex objects. Any url found must match
 at least one of these regexes if it is to be uploaded. If you don't supply
 this parameter, a default regex of C<qr/(?i:jpe?g|gif|png)$/> is used.
 
-B<'URI_subst'>, an array of regex/string pairs. These substitutions will be
-done on the accepted URIs before they are processed further.
+B<'URI_subst'>, an hash reference of regex/string pairs. These
+substitutions will be done on the accepted URIs before they are processed
+further.
 
 Example:
 
