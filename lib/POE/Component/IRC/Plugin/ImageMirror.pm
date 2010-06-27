@@ -11,7 +11,7 @@ use POE::Component::IRC::Plugin::URI::Find;
 use POE::Wheel::Run;
 use URI::Title qw(title);
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 sub new {
     my ($package, %args) = @_;
