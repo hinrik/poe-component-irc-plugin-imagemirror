@@ -1,3 +1,6 @@
+{{$NEXT}}
+    - Use Dist::Zilla
+
 0.08 Sun Jun 27 06:41:56 GMT 2010
     - Require URI_subst to be a hash
 

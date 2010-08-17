@@ -11,8 +11,6 @@ use POE::Component::IRC::Plugin::URI::Find;
 use POE::Wheel::Run;
 use URI::Title qw(title);
 
-our $VERSION = '0.08';
-
 sub new {
     my ($package, %args) = @_;
     my $self = bless \%args, $package;
@@ -313,8 +311,7 @@ sub _post_uri {
 
 =head1 NAME
 
-POE::Component::IRC::Plugin::ImageMirror - A PoCo-IRC plugin which uploads
-select images to a mirror service
+POE::Component::IRC::Plugin::ImageMirror - A PoCo-IRC plugin which uploads select images to a mirror service
 
 =head1 SYNOPSIS
 

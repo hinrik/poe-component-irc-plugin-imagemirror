@@ -1,7 +1,2 @@
-^Makefile$
 ^POE-Component-IRC-Plugin-ImageMirror-
-\.old$
-\.bak$
-\.git
-^pm_to_blib$
-^blib/
+cover_db
