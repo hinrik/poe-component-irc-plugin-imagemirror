@@ -1,7 +1,7 @@
 package POE::Component::IRC::Plugin::ImageMirror;
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use HTTP::Cookies;
 use HTTP::Headers;
 use LWP::UserAgent::POE;
