@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.10  Thu Sep 2 21:42:24 UTC 2010
     - Use POE::Quickie instead of LWP::UserAgent::POE and POE::Wheel::Run
     - Try every web request 3 times before giving up
 
