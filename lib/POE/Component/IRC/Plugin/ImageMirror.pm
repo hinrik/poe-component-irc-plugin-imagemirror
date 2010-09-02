@@ -4,11 +4,10 @@ use strict;
 use warnings FATAL => 'all';
 use HTTP::Cookies;
 use HTTP::Headers;
-use LWP::UserAgent::POE;
 use POE;
 use POE::Component::IRC::Plugin qw(PCI_EAT_NONE PCI_EAT_PLUGIN);
 use POE::Component::IRC::Plugin::URI::Find;
-use POE::Wheel::Run;
+use POE::Quickie;
 use URI::Title qw(title);
 
 sub new {
@@ -61,13 +60,10 @@ sub PCI_register {
             $self => [qw(
                 _start
                 _sig_DIE
-                _sig_chld
-                _child_stdout
-                _child_stderr
-                _uri_title
-                _no_uri_title
+                _process_uri
                 _mirror_imgur
                 _mirror_imgshack
+                _mirrored
                 _post_uri
             )],
         ],
@@ -132,159 +128,136 @@ sub S_urifind_uri {
         }
     }
 
-    my $sender = POE::Kernel->get_active_session;
-    if ($self->{URI_title}) {
-        POE::Kernel->post($self->{session_id}, _uri_title => $sender, $where, $uri);
-    }
-    else {
-        POE::Kernel->post($self->{session_id}, _no_uri_title => $sender, $where, $uri);
-    }
+    $poe_kernel->call($self->{session_id}, '_process_uri', $where, $uri);
 
     return $self->{Eat}
         ? PCI_EAT_PLUGIN
         : PCI_EAT_NONE;
 }
 
-sub _no_uri_title {
-    my ($kernel, $self, $sender, $where, $uri) = @_[KERNEL, OBJECT, ARG0..ARG2];
+sub _process_uri {
+    my ($kernel, $self, $sender, $where, $uri) =
+        @_[KERNEL, OBJECT, SENDER, ARG0, ARG1];
+
+    $kernel->refcount_increment($sender->ID, __PACKAGE__);
 
     $self->{req}{$uri} = {
-        sender   => $sender,
+        sender   => $sender->ID,
         where    => $where,
         orig_uri => $uri,
     };
-    $kernel->yield(_mirror_imgur => $uri);
-    $kernel->yield(_mirror_imgshack => $uri);
-    $kernel->refcount_increment($sender, __PACKAGE__);
-    return;
-}
 
-sub _uri_title {
-    my ($kernel, $self, $sender, $where, $uri) = @_[KERNEL, OBJECT, ARG0..ARG2];
-
-    my @inc = map { +'-I' => $_ } @INC;
-    my $wheel = POE::Wheel::Run->new(
-        Program     => sub { title($uri) },
-        StdoutEvent => '_child_stdout',
-        StderrEvent => '_child_stderr',
-        ($^O eq 'MSWin32' ? (CloseOnCall => 0) : (CloseOnCall => 1)),
-    );
-
-    $self->{req}{$uri} = {
-        sender   => $sender,
-        where    => $where,
-        wheel    => $wheel,
-        orig_uri => $uri,
-    };
-
-    $kernel->sig_child($wheel->PID, '_sig_chld');
-    $kernel->refcount_increment($sender, __PACKAGE__);
-    return;
-}
-
-sub _sig_chld {
-    $_[KERNEL]->sig_handled;
-    return;
-}
-
-sub _child_stderr {
-    my ($kernel, $self, $input) = @_[KERNEL, OBJECT, ARG0];
-    warn "$input\n" if $self->{debug};
-    return;
-}
-
-sub _child_stdout {
-    my ($kernel, $self, $title, $id) = @_[KERNEL, OBJECT, ARG0, ARG1];
-
-    my $uri;
-    for my $key (keys %{ $self->{req} }) {
-        if ($self->{req}{$key}{wheel}->ID eq $id) {
-            $uri = $key;
-            last;
+    if ($self->{URI_title}) {
+        my $title;
+        for (1..3) {
+            ($title) = quickie(sub { print title($uri), "\n" });
+            chomp $title;
+            last if length $title;
         }
+        $self->{req}{$uri}{title} = $title;
     }
 
-    $self->{req}{$uri}{title} = $title;
+    POE::Quickie->run(
+        Program     => sub {
+            _mirror_imgur($self->{Imgur_user}, $self->{Imgur_pass}, $uri);
+        },
+        Context     => [$uri, '0_imgur'],
+        StdoutEvent => '_mirrored',
+    );
 
-    $kernel->yield(_mirror_imgur => $uri);
-    $kernel->yield(_mirror_imgshack => $uri);
+    POE::Quickie->run(
+        Program     => sub { _mirror_imgshack($self->{useragent}, $uri) },
+        Context     => [$uri, '1_imgshack'],
+        StdoutEvent => '_mirrored',
+    );
+
     return;
 }
 
 sub _mirror_imgur {
-    my ($kernel, $self, $orig_uri) = @_[KERNEL, OBJECT, ARG0];
+    my ($imgur_user, $imgur_pass, $orig_uri) = @_;
 
-    my $ua = LWP::UserAgent::POE->new(
+    my $ua = LWP::UserAgent->new(
         cookie_jar            => HTTP::Cookies->new,
         requests_redirectable => [qw(GET HEAD POST)],
     );
 
-    if (defined $self->{Imgur_user} && defined $self->{Imgur_pass}) {
-        $ua->post(
-            'http://imgur.com/signin',
-            {
-                username => $self->{Imgur_user},
-                password => $self->{Imgur_pass},
-                submit   => '',
-            },
-        );
-    }
+    $ua->post(
+        'http://imgur.com/signin',
+        {
+            username => $imgur_user,
+            password => $imgur_pass,
+            submit   => '',
+        },
+    );
 
-    my $res = $ua->get("http://imgur.com/api/upload/?url=$orig_uri");
+    my $imgur = '';
 
-    my $imgur;
-    if ($res->is_success) {
-        if (my ($uri) = $res->content =~ m{id="direct"\s+value="(.*?)"}) {
-            $imgur = $uri;
+    TRY: for (1..3) {
+        my $res = $ua->get("http://imgur.com/api/upload/?url=$orig_uri");
+
+        if ($res->is_success) {
+            if (my ($uri) = $res->content =~ m{id="direct"\s+value="(.*?)"}) {
+                $imgur = $uri;
+                last TRY;
+            }
         }
     }
 
-    $self->{req}{$orig_uri}{imgur_uri} = defined $imgur ? $imgur : '';
-
-    # post the url if we've got both now
-    if (defined $self->{req}{$orig_uri}{imgshack_uri}) {
-        $kernel->yield(_post_uri => $orig_uri);
-    }
+    print $imgur, "\n";
     return;
+
 }
 
 sub _mirror_imgshack {
-    my ($kernel, $self, $orig_uri) = @_[KERNEL, OBJECT, ARG0];
+    my ($useragent, $orig_uri) = @_;
 
-    my $ua = LWP::UserAgent::POE->new(
+    my $ua = LWP::UserAgent->new(
         cookie_jar            => HTTP::Cookies->new,
         requests_redirectable => [qw(GET HEAD POST)],
-        ua                    => $self->{useragent},
+        ua                    => $useragent,
         default_header        => HTTP::Headers->new(
             Referer => 'http://imageshack.us/',
         ),
     );
 
-    my $res = $ua->post(
-         'http://www.imageshack.us/transload.php',
-         Content_Type => 'multipart/form-data',
-         Content      => [
-            uploadtype    => 'on',
-            url           => $orig_uri,
-            email         => '', 
-            MAX_FILE_SIZE => 13145728,
-            refer         => '', 
-            brand         => '', 
-            optsize       => 'resample',
-        ],
-    );
+    my $imgshack = '';
 
-    my $imgshack;
-    if ($res->is_success) {
-        if (my ($uri) = $res->content =~ m{<a.*? href="(.*?)"[^>]+>Direct}) {
-            $imgshack = $uri;
+    TRY: for (1..3) {
+        my $res = $ua->post(
+            'http://www.imageshack.us/transload.php',
+            Content_Type => 'multipart/form-data',
+            Content      => [
+                uploadtype    => 'on',
+                url           => $orig_uri,
+                email         => '',
+                MAX_FILE_SIZE => 13145728,
+                refer         => '',
+                brand         => '',
+                optsize       => 'resample',
+            ],
+        );
+
+        if ($res->is_success) {
+            if (my ($uri) = $res->content =~ m{<a.*? href="(.*?)"[^>]+>Direct}) {
+                $imgshack = $uri;
+                last TRY;
+            }
         }
     }
 
-    $self->{req}{$orig_uri}{imgshack_uri} = defined $imgshack ? $imgshack : '';
+    print $imgshack, "\n";
+    return;
+}
+
+sub _mirrored {
+    my ($kernel, $self, $uri, $context) = @_[KERNEL, OBJECT, ARG0, ARG2];
+
+    my ($orig_uri, $mirror) = @$context;
+    $self->{req}{$orig_uri}{mirrored}{$mirror} = $uri;
 
     # post the url if we've got both now
-    if (defined $self->{req}{$orig_uri}{imgur_uri}) {
+    if (keys %{ $self->{req}{$orig_uri}{mirrored} } == 2) {
         $kernel->yield(_post_uri => $orig_uri);
     }
     return;
@@ -295,11 +268,11 @@ sub _post_uri {
 
     my $req = delete $self->{req}{$uri};
     my $title = $self->{URI_title} ? "$req->{title} - " : '';
-    $self->{irc}->yield(
-        $self->{Method},
-        $req->{where},
-        "$title$req->{imgur_uri} / $req->{imgshack_uri}",
-    );
+
+    my $mirrors = join ' / ',
+                  map { $req->{mirrored}{$_} }
+                  sort keys %{ $req->{mirrored} };
+    $self->{irc}->yield($self->{Method}, $req->{where}, "$title$mirrors");
 
     $kernel->refcount_decrement($req->{sender}, __PACKAGE__);
     return;

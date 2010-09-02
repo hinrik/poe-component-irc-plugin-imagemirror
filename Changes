@@ -1,4 +1,6 @@
 {{$NEXT}}
+    - Use POE::Quickie instead of LWP::UserAgent::POE and POE::Wheel::Run
+    - Try every web request 3 times before giving up
 
 0.09  Tue Aug 17 22:54:25 GMT 2010
     - Use Dist::Zilla
