@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.11  Mon Sep 6 04:30:41 GMT 2010
     - Handle Unicode channel names in 'Channels' parameter
 
 0.10  Thu Sep 2 21:42:24 UTC 2010
