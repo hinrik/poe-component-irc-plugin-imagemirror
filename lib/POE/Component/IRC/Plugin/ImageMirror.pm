@@ -4,7 +4,10 @@ use strict;
 use warnings FATAL => 'all';
 use HTTP::Cookies;
 use HTTP::Headers;
+use Encode qw(is_utf8);
+use List::Util qw(first);
 use POE;
+use POE::Component::IRC::Common qw(irc_to_utf8);
 use POE::Component::IRC::Plugin qw(PCI_EAT_NONE PCI_EAT_PLUGIN);
 use POE::Component::IRC::Plugin::URI::Find;
 use POE::Quickie;
@@ -101,13 +104,7 @@ sub S_urifind_uri {
     my $where = ${ $_[1] };
     my $uri   = ${ $_[2] };
 
-    if (ref $self->{Channels} eq 'ARRAY') {
-        my $ok;
-        for my $chan (@{ $self->{Channels} }) {
-            $ok = 1 if $chan eq $where;
-        }
-        return PCI_EAT_NONE if !$ok;
-    }
+    return PCI_EAT_NONE if $self->_ignoring_channel($where);
 
     my $matched;
     for my $match (@{ $self->{URI_match} }) {
@@ -133,6 +130,19 @@ sub S_urifind_uri {
     return $self->{Eat}
         ? PCI_EAT_PLUGIN
         : PCI_EAT_NONE;
+}
+
+sub _ignoring_channel {
+    my ($self, $chan) = @_;
+
+    if ($self->{Channels}) {
+        return 1 if !first {
+            my $c = $chan;
+            $c = irc_to_utf8($c) if is_utf8($_);
+            $_ eq $c
+        } @{ $self->{Channels} };
+    }
+    return;
 }
 
 sub _process_uri {
