@@ -298,6 +298,13 @@ POE::Component::IRC::Plugin::ImageMirror - A PoCo-IRC plugin which uploads selec
 
 =head1 SYNOPSIS
 
+To quickly get an IRC bot with this plugin up and running, you can use
+L<App::Pocoirc|App::Pocoirc>:
+
+ $ pocoirc -s irc.perl.org -j '#bots' -p ImageMirror
+
+Or use it in your code:
+
  use POE::Component::IRC::Plugin::ImageMirror;
 
  # mirror all images from 4chan.org

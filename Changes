@@ -1,4 +1,5 @@
 {{$NEXT}}
+    - Mention App::Pocoirc in the SYNOPSIS
 
 0.11  Mon Sep 6 04:30:41 GMT 2010
     - Handle Unicode channel names in 'Channels' parameter
