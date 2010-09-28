@@ -301,7 +301,7 @@ POE::Component::IRC::Plugin::ImageMirror - A PoCo-IRC plugin which uploads selec
 To quickly get an IRC bot with this plugin up and running, you can use
 L<App::Pocoirc|App::Pocoirc>:
 
- $ pocoirc -s irc.perl.org -j '#bots' -p ImageMirror
+ $ pocoirc -s irc.perl.org -j '#bots' -a ImageMirror
 
 Or use it in your code:
 
