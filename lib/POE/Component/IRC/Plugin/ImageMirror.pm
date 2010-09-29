@@ -26,6 +26,7 @@ sub new {
     $self->{URI_match} = [qr/(?i:jpe?g|gif|png)$/] if !$self->{URI_match};
     $self->{URI_title} = 1 if !defined $self->{URI_title};
     $self->{Method} = 'notice' if !defined $self->{Method};
+    $self->{req} = [];
 
     return $self;
 }
@@ -113,12 +114,6 @@ sub S_urifind_uri {
     }
     return PCI_EAT_NONE if !$matched;
 
-    if (defined $self->{req}{$uri}) {
-        return $self->{Eat}
-            ? PCI_EAT_PLUGIN
-            : PCI_EAT_NONE;
-    }
-
     if ($self->{URI_subst}) {
         while (my ($regex, $subst) = each %{ $self->{URI_subst} }) {
             $uri =~ s/$regex/$subst/;
@@ -151,11 +146,13 @@ sub _process_uri {
 
     $kernel->refcount_increment($sender->ID, __PACKAGE__);
 
-    $self->{req}{$uri} = {
+    my $req = {
         sender   => $sender->ID,
         where    => $where,
         orig_uri => $uri,
     };
+    push @{ $self->{req} }, $req;
+
 
     if ($self->{URI_title}) {
         my $title;
@@ -164,20 +161,20 @@ sub _process_uri {
             chomp $title;
             last if length $title;
         }
-        $self->{req}{$uri}{title} = $title;
+        $req->{title} = $title;
     }
 
     POE::Quickie->run(
         Program     => sub {
             _mirror_imgur($self->{Imgur_user}, $self->{Imgur_pass}, $uri);
         },
-        Context     => [$uri, '0_imgur'],
+        Context     => [$req, '0_imgur'],
         StdoutEvent => '_mirrored',
     );
 
     POE::Quickie->run(
         Program     => sub { _mirror_imgshack($self->{useragent}, $uri) },
-        Context     => [$uri, '1_imgshack'],
+        Context     => [$req, '1_imgshack'],
         StdoutEvent => '_mirrored',
     );
 
@@ -263,25 +260,26 @@ sub _mirror_imgshack {
 sub _mirrored {
     my ($kernel, $self, $uri, $context) = @_[KERNEL, OBJECT, ARG0, ARG2];
 
-    my ($orig_uri, $mirror) = @$context;
-    $self->{req}{$orig_uri}{mirrored}{$mirror} = $uri;
+    my ($req, $mirror) = @$context;
+    $req->{mirrored}{$mirror} = $uri;
 
-    # post the url if we've got both now
-    if (keys %{ $self->{req}{$orig_uri}{mirrored} } == 2) {
-        $kernel->yield(_post_uri => $orig_uri);
+    while (@{ $self->{req} }
+        && $self->{req}[0]{mirrored}
+        && keys %{ $self->{req}[0]{mirrored} } == 2) {
+        my $request = shift @{ $self->{req} };
+        $kernel->yield(_post_uri => $request);
     }
     return;
 }
 
 sub _post_uri {
-    my ($kernel, $self, $uri) = @_[KERNEL, OBJECT, ARG0];
+    my ($kernel, $self, $req) = @_[KERNEL, OBJECT, ARG0];
 
-    my $req = delete $self->{req}{$uri};
     my $title = $self->{URI_title} ? "$req->{title} - " : '';
-
     my $mirrors = join ' / ',
                   map { $req->{mirrored}{$_} }
                   sort keys %{ $req->{mirrored} };
+
     $self->{irc}->yield($self->{Method}, $req->{where}, "$title$mirrors");
 
     $kernel->refcount_decrement($req->{sender}, __PACKAGE__);
