@@ -12,6 +12,8 @@ use POE::Component::IRC::Plugin qw(PCI_EAT_NONE PCI_EAT_PLUGIN);
 use POE::Component::IRC::Plugin::URI::Find;
 use POE::Quickie;
 use URI::Title qw(title);
+use Image::ImageShack;
+use Try::Tiny;
 
 sub new {
     my ($package, %args) = @_;
@@ -227,30 +229,23 @@ sub _mirror_imgshack {
             Referer => 'http://imageshack.us/',
         ),
     );
+    my $ishack = Image::ImageShack->new;
 
     my $imgshack = '';
 
     TRY: for (1..3) {
-        my $res = $ua->post(
-            'http://www.imageshack.us/transload.php',
-            Content_Type => 'multipart/form-data',
-            Content      => [
-                uploadtype    => 'on',
-                url           => $orig_uri,
-                email         => '',
-                MAX_FILE_SIZE => 13145728,
-                refer         => '',
-                brand         => '',
-                optsize       => 'resample',
-            ],
-        );
+        try {
+            my $url = $ishack->host($orig_uri);
 
-        if ($res->is_success) {
-            if (my ($uri) = $res->content =~ m{<a.*? href="(.*?)"[^>]+>Direct}) {
-                $imgshack = $uri;
-                last TRY;
+            # Try to get the big version
+            my $res = $ua->get($url);
+            if ($res->is_success) {
+                if (my ($big_url) = $res->content =~ m{<meta property="og:image" content="(.*?)"}) {
+                    $imgshack = $big_url;
+                    last TRY;
+                }
             }
-        }
+        };
     }
 
     print $imgshack, "\n";
